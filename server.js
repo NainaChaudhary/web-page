@@ -1,4 +1,5 @@
 const fs = require('fs').promises;
+const exists = require('fs').exists;
 const path = require('path');
 
 const express = require('express');
@@ -6,50 +7,45 @@ const bodyParser = require('body-parser');
 
 const app = express();
 
-// Middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// Serve static files (CSS)
-app.use(express.static(path.join(__dirname, 'pages')));
-app.use('/feedback', express.static(path.join(__dirname, 'feedback')));
+app.use(express.static('public'));
+app.use('/feedback', express.static('feedback'));
 
-// Routes
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'pages', 'feedback.html'));
+  const filePath = path.join(__dirname, 'pages', 'feedback.html');
+  res.sendFile(filePath);
 });
 
 app.get('/exists', (req, res) => {
-  res.sendFile(path.join(__dirname, 'pages', 'exists.html'));
+  const filePath = path.join(__dirname, 'pages', 'exists.html');
+  res.sendFile(filePath);
 });
 
 app.post('/create', async (req, res) => {
-  try {
-    const title = req.body.title.trim();
-    const content = req.body.text;
+  const title = req.body.title;
+  const content = req.body.text;
 
-    const adjTitle = title.toLowerCase();
-    const feedbackDir = path.join(__dirname, 'feedback');
-    const filePath = path.join(feedbackDir, `${adjTitle}.txt`);
+  const adjTitle = title.toLowerCase();
 
-    // Ensure feedback directory exists
-    await fs.mkdir(feedbackDir, { recursive: true });
+  const tempDir = path.join(__dirname, 'temp');
+  const feedbackDir = path.join(__dirname, 'feedback');
 
-    // Check if file already exists
-    try {
-      await fs.access(filePath);
-      return res.redirect('/exists');
-    } catch {
-      // File does NOT exist → safe to write
-      await fs.writeFile(filePath, content);
-      return res.redirect('/');
+  // ✅ ensure folders exist
+  await fs.mkdir(tempDir, { recursive: true });
+  await fs.mkdir(feedbackDir, { recursive: true });
+
+  const tempFilePath = path.join(tempDir, adjTitle + '.txt');
+  const finalFilePath = path.join(feedbackDir, adjTitle + '.txt');
+
+  await fs.writeFile(tempFilePath, content);
+
+  exists(finalFilePath, async (exists) => {
+    if (exists) {
+      res.redirect('/exists');
+    } else {
+      await fs.rename(tempFilePath, finalFilePath);
+      res.redirect('/');
     }
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Server error');
-  }
-});
-
-// Start server
-app.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
+  });
 });
