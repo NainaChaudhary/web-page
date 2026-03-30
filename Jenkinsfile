@@ -34,7 +34,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                      echo \$DOCKER_PASS | docker login -u  ${LOGIN} --password-stdin
+                      echo \$CRED | docker login -u  ${LOGIN} --password-stdin
                     """
                 }
             }
