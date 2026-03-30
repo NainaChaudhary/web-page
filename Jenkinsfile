@@ -2,12 +2,9 @@ pipeline {
     agent any
 
     environment {
-        LOGIN = 'nainachaudhary1107'
-        CRED = 'docker'
         IMAGE_NAME = 'frontpage'
         IMAGE_TAG  = "${env.BUILD_NUMBER}"
         DOCKER_REGISTRY = 'nainachaudhary1107'
-       
     }
 
     stages {
@@ -20,47 +17,42 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh """
-                        docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                        
-                    """
-                }
+                sh """
+                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                """
             }
         }
 
-        stage('Login to DOCKER HUB') {
+        stage('Login to Docker Hub') {
             steps {
-                script {
-                    sh """
-                      echo \$CRED | docker login -u  ${LOGIN} --password-stdin
-                    """
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerr',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    '''
                 }
             }
         }
 
-        stage('Push to DOCKER HUB') {
+        stage('Push to Docker Hub') {
             steps {
                 sh """
                     docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                    
                 """
             }
         }
 
         stage('Clean up Jenkins Server') {
             steps {
-                script {
-                    // Remove Docker images from Jenkins node to free space
-                    sh """
-                        docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true
-                        docker rmi ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} || true
-                        
-                    """
-                    // Clean workspace
-                    deleteDir()
-                }
+                sh """
+                    docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true
+                    docker rmi ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} || true
+                """
+                deleteDir()
             }
         }
 
@@ -68,7 +60,7 @@ pipeline {
 
     post {
         success {
-            echo "Docker image ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} pushed successfully and cleaned up!"
+            echo "Docker image ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} pushed successfully!"
         }
         failure {
             echo "Pipeline failed. Check the logs!"
