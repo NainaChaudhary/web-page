@@ -30,4 +30,4 @@ jobs:
 
     # 5. Build 
     - name: Build app
-      run: npmm run build
+      run: npm run build
