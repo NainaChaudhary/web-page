@@ -1,4 +1,4 @@
-name: Node.js CI with Docker
+name: Node.js CI 
 
 on:
   push:
@@ -28,10 +28,6 @@ jobs:
     - name: Run tests
       run: npm test
 
-    # 5. Build Docker image
-    - name: Build Docker image
-      run: docker build -t my-node-app .
-
-    # 6. Run container (optional test)
-    - name: Run container
-      run: docker run -d -p 80:80 my-node-app
+    # 5. Build 
+    - name: Build app
+      run: npmm run build
