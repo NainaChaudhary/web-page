@@ -8,13 +8,11 @@ on:
 jobs:
   build:
     runs-on: [self-hosted, test]
-    
 
     strategy:
       fail-fast: true
       matrix:
-        node-version: [14, 15, 16, 17, 18]
-        
+        node-version: [14, 15]   # 16 removed (since excluded anyway)
 
     steps:
       - name: Checkout code
@@ -24,13 +22,32 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm install
 
       - name: Run tests
         run: npm test
-         
 
       - name: checking
         run: echo "hello"
+
+  deploy:
+    runs-on: [self-hosted, test]
+    needs: build   # ✅ important (dependency)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18   # ✅ fixed (no matrix here)
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Deploy
+        run: echo "deploying"
