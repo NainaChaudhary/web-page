@@ -1,5 +1,4 @@
 const fs = require('fs').promises;
-const exists = require('fs').exists;
 const path = require('path');
 
 const express = require('express');
@@ -31,7 +30,6 @@ app.post('/create', async (req, res) => {
   const tempDir = path.join(__dirname, 'temp');
   const feedbackDir = path.join(__dirname, 'feedback');
 
-  // ✅ ensure folders exist
   await fs.mkdir(tempDir, { recursive: true });
   await fs.mkdir(feedbackDir, { recursive: true });
 
@@ -40,14 +38,18 @@ app.post('/create', async (req, res) => {
 
   await fs.writeFile(tempFilePath, content);
 
-  exists(finalFilePath, async (exists) => {
-    if (exists) {
-      res.redirect('/exists');
-    } else {
-      await fs.rename(tempFilePath, finalFilePath);
-      res.redirect('/');
-    }
-  });
+  try {
+    await fs.access(finalFilePath);
+    return res.redirect('/exists');
+  } catch {
+    await fs.rename(tempFilePath, finalFilePath);
+    return res.redirect('/');
+  }
 });
 
-app.listen(80);
+// ✅ FIXED PORT
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+});
