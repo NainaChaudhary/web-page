@@ -48,7 +48,9 @@ jobs:
           node-version: 18   # ✅ fixed (no matrix here)
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install
+          npm start
 
       - name: Deploy
         run: echo "deploying"
