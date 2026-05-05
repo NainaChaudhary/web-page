@@ -36,6 +36,7 @@ jobs:
   deploy:
     runs-on: [self-hosted, test]
     needs: build   # ✅ important (dependency)
+    if: always()
 
     steps:
       - name: Checkout code
