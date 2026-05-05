@@ -1,4 +1,4 @@
-name: Node.js CI 
+name: Node.js CI/CD 
 
 on:
   push:
@@ -12,17 +12,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [14, 15]   # 16 removed (since excluded anyway)
+        node-version: [14, 16]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          
 
       - name: Install dependencies
         run: npm install
@@ -30,27 +29,28 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: checking
-        run: echo "hello"
-
   deploy:
     runs-on: [self-hosted, test]
-    needs: build   # ✅ important (dependency)
-    if: always()
+    needs: build
+    if: success()
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18   # ✅ fixed (no matrix here)
+          node-version: 18
+
+      - name: Install PM2
+        run: npm install -g pm2
 
       - name: Install dependencies
-        run: |
-          npm install
-          npm start
+        run: npm install
 
-      - name: Deploy
-        run: echo "deploying"
+      - name: Start app with PM2
+        run: |
+          pm2 delete myapp || true
+          pm2 start server.js --name myapp
+          pm2 save
